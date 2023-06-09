@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "repositories": [
+    "kyhule/polyworld-app",
+    "kyhule/polyworld-template",
+    "kyhule/polyworld-gradle-plugin",
+    "kyhule/polyworld-workflows"
+  ],
+  "onboardingConfig": { "extends": ["kyhule/polyworld-renovate:android"] },
+  "onboardingConfigFileName": ".github/renovate.json"
+}
