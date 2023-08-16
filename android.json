@@ -14,17 +14,20 @@
       "groupName": "kotlin"
     },
     {
-      "matchPackagePatterns": [
-        "com.xfinity.dh.build.gradle-enterprise-conventions-plugin",
-        "com.xfinity.dh.build:gradle-enterprise-conventions-plugin",
-        "com.gradle:gradle-enterprise-gradle-plugin"
-      ],
-      "groupName": "gradle-enterprise"
-    },
-    {
       "matchDatasources": ["maven"],
       "matchPackagePrefixes": ["androidx", "com.android"],
       "registryUrls": ["https://dl.google.com/android/maven2/"]
+    },
+    {
+      "description": "Automerge build updates",
+      "matchPackagePrefixes": [
+        "com.github.kyhule.polyworld.build*",
+        "kyhule/polyworld-workflows",
+        "gradle"
+      ],
+      "assignees": ["kyhule"],
+      "automerge": true,
+      "automergeType": "branch"
     }
   ],
   "hostRules": [
