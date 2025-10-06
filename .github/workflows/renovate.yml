@@ -1,16 +1,61 @@
 name: Renovate
 
 on:
-  schedule:
-    - cron: "/15 * * * *"
+  # This lets you dispatch a renovate job with different cache options if you want to reset or disable the cache manually.
   workflow_dispatch:
+    inputs:
+      repoCache:
+        description: 'Reset or disable the cache?'
+        type: choice
+        default: enabled
+        options:
+          - enabled
+          - disabled
+          - reset
+  schedule:
+    - cron: '*/15 0 * * *'
+
+permissions:
+  actions: write # Required to delete existing cache
+  contents: read
+
+# Adding these as env variables makes it easy to re-use them in different steps and in bash.
+env:
+  # This is the dir renovate provides -- if we set our own directory via cacheDir, we can run into permissions issues.
+  # It is also possible to cache a higher level of the directory, but it has minimal benefit. While renovate execution
+  # time gets faster, it also takes longer to upload the cache as it grows bigger.
+  cache_dir: /tmp/renovate/cache/renovate/repository
+  # This can be manually changed to bust the cache if necessary.
+  cache_key: renovate-cache
 
 jobs:
   renovate:
+    name: Renovate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Restore cache
+        if: github.event.inputs.repoCache != 'disabled'
+        id: cache-restore
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # 4.3.0
+        with:
+          path: ${{ env.cache_dir }}
+          key: ${{ env.cache_key }}
+
+      - name: Try fix cache permissions
+        if: ${{ steps.cache-restore.outputs.cache-hit }}
+        continue-on-error: true
+        run: |
+          set -x
+          
+          # Unfortunately, the permissions expected within renovate's docker container
+          # are different than the ones given after the cache is restored. We have to
+          # change ownership to solve this. We also need to have correct permissions in
+          # the entire /tmp/renovate tree, not just the section with the repo cache.
+          sudo chown -R 12021:0 /tmp/renovate/
+          ls -R $cache_dir
 
       - name: Self-hosted Renovate
         uses: renovatebot/github-action@53bdcc4ec92f28e5023ac92356ea8bb45f8b807d # v43.0.15
@@ -18,4 +63,21 @@ jobs:
           configurationFile: .github/renovate-android.json
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          LOG_LEVEL: 'debug'
+          # This enables the cache -- if this is set, it's not necessary to add it to renovate.json.
+          RENOVATE_REPOSITORY_CACHE: ${{ github.event.inputs.repoCache || 'enabled' }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+
+      - name: Delete previous cache
+        if: ${{ github.event.inputs.repoCache != 'disabled' && steps.cache-restore.outputs.cache-hit }}
+        continue-on-error: true
+        # GitHub CLI is already preinstalled on the runner
+        run: gh cache delete "${{ env.cache_key }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save cache
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # 4.3.0
+        if: github.event.inputs.repoCache != 'disabled'
+        with:
+          path: ${{ env.cache_dir }}
+          key: ${{ env.cache_key }}
