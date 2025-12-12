@@ -39,7 +39,7 @@ jobs:
       - name: Restore cache
         if: github.event.inputs.repoCache != 'disabled'
         id: cache-restore
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # 4.3.0
+        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # 5.0.1
         with:
           path: ${{ env.cache_dir }}
           key: ${{ env.cache_key }}
@@ -76,7 +76,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Save cache
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # 4.3.0
+        uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb # 5.0.1
         if: github.event.inputs.repoCache != 'disabled'
         with:
           path: ${{ env.cache_dir }}
